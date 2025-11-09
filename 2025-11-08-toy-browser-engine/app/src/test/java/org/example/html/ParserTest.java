@@ -2,6 +2,7 @@ package org.example.html;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -87,5 +88,201 @@ class ParserTest {
     assertInstanceOf(TextNode.class, li2Node.children.get(0).nodeType);
     assertEquals("Item 2", ((TextNode) li2Node.children.get(0).nodeType).text);
     assertEquals("active", ((ElementNode) li2Node.nodeType).attributes.get("class"));
+  }
+
+  @Test
+  void parseNodes_emptyInput() throws Exception {
+    Parser parser = new Parser("");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(0, nodes.size());
+  }
+
+  @Test
+  void parseNodes_whitespaceOnly() throws Exception {
+    Parser parser = new Parser("   \n\t  ");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(0, nodes.size());
+  }
+
+  @Test
+  void parseNodes_textOnly() throws Exception {
+    Parser parser = new Parser("Hello World");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(1, nodes.size());
+    assertInstanceOf(TextNode.class, nodes.get(0).nodeType);
+    assertEquals("Hello World", ((TextNode) nodes.get(0).nodeType).text);
+  }
+
+  @Test
+  void parseNodes_singleElementNoAttributes() throws Exception {
+    Parser parser = new Parser("<div>Content</div>");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(1, nodes.size());
+    
+    Node divNode = nodes.get(0);
+    assertInstanceOf(ElementNode.class, divNode.nodeType);
+    assertEquals("div", ((ElementNode) divNode.nodeType).tagName);
+    assertTrue(((ElementNode) divNode.nodeType).attributes.isEmpty());
+    assertEquals(1, divNode.children.size());
+    assertEquals("Content", ((TextNode) divNode.children.get(0).nodeType).text);
+  }
+
+  @Test
+  void parseNodes_emptyElement() throws Exception {
+    Parser parser = new Parser("<div></div>");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(1, nodes.size());
+    
+    Node divNode = nodes.get(0);
+    assertInstanceOf(ElementNode.class, divNode.nodeType);
+    assertEquals("div", ((ElementNode) divNode.nodeType).tagName);
+    assertEquals(0, divNode.children.size());
+  }
+
+  @Test
+  void parseNodes_multipleRootElements() throws Exception {
+    Parser parser = new Parser("<h1>Title</h1><p>Paragraph</p>");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(2, nodes.size());
+    
+    Node h1Node = nodes.get(0);
+    assertInstanceOf(ElementNode.class, h1Node.nodeType);
+    assertEquals("h1", ((ElementNode) h1Node.nodeType).tagName);
+    assertEquals("Title", ((TextNode) h1Node.children.get(0).nodeType).text);
+    
+    Node pNode = nodes.get(1);
+    assertInstanceOf(ElementNode.class, pNode.nodeType);
+    assertEquals("p", ((ElementNode) pNode.nodeType).tagName);
+    assertEquals("Paragraph", ((TextNode) pNode.children.get(0).nodeType).text);
+  }
+
+  @Test
+  void parseNodes_deepNesting() throws Exception {
+    Parser parser = new Parser("<div><span><em>Deep</em></span></div>");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(1, nodes.size());
+    
+    Node divNode = nodes.get(0);
+    assertEquals(1, divNode.children.size());
+    
+    Node spanNode = divNode.children.get(0);
+    assertInstanceOf(ElementNode.class, spanNode.nodeType);
+    assertEquals("span", ((ElementNode) spanNode.nodeType).tagName);
+    assertEquals(1, spanNode.children.size());
+    
+    Node emNode = spanNode.children.get(0);
+    assertInstanceOf(ElementNode.class, emNode.nodeType);
+    assertEquals("em", ((ElementNode) emNode.nodeType).tagName);
+    assertEquals(1, emNode.children.size());
+    assertEquals("Deep", ((TextNode) emNode.children.get(0).nodeType).text);
+  }
+
+  @Test
+  void parseNodes_emptyAttributeValue() throws Exception {
+    Parser parser = new Parser("<div class=\"\">Content</div>");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(1, nodes.size());
+    
+    Node divNode = nodes.get(0);
+    assertEquals("", ((ElementNode) divNode.nodeType).attributes.get("class"));
+  }
+
+  @Test
+  void parseNodes_multipleAttributes() throws Exception {
+    Parser parser = new Parser("<div id=\"main\" class=\"container\" data=\"123\">Content</div>");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(1, nodes.size());
+    
+    Node divNode = nodes.get(0);
+    ElementNode elementNode = (ElementNode) divNode.nodeType;
+    assertEquals("main", elementNode.attributes.get("id"));
+    assertEquals("container", elementNode.attributes.get("class"));
+    assertEquals("123", elementNode.attributes.get("data"));
+    assertEquals(3, elementNode.attributes.size());
+  }
+
+  @Test
+  void parseNodes_textWithWhitespace() throws Exception {
+    Parser parser = new Parser("<div>  Hello   World  </div>");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(1, nodes.size());
+    
+    Node divNode = nodes.get(0);
+    assertEquals(1, divNode.children.size());
+    // パーサーは要素の開始タグの後の空白を消費するため、先頭の空白は保持されない
+    assertEquals("Hello   World  ", ((TextNode) divNode.children.get(0).nodeType).text);
+  }
+
+  @Test
+  void parseNodes_mixedTextAndElements() throws Exception {
+    Parser parser = new Parser("Before<div>Inside</div>After");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(3, nodes.size());
+    
+    assertEquals("Before", ((TextNode) nodes.get(0).nodeType).text);
+    assertEquals("div", ((ElementNode) nodes.get(1).nodeType).tagName);
+    assertEquals("After", ((TextNode) nodes.get(2).nodeType).text);
+  }
+
+  @Test
+  void parseNodes_numericTagName() throws Exception {
+    Parser parser = new Parser("<h1>Title</h1>");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(1, nodes.size());
+    assertEquals("h1", ((ElementNode) nodes.get(0).nodeType).tagName);
+  }
+
+  @Test
+  void parseNodes_attributeWithSpecialCharacters() throws Exception {
+    Parser parser = new Parser("<div class=\"test-class\" id=\"test_id\">Content</div>");
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(1, nodes.size());
+    
+    ElementNode elementNode = (ElementNode) nodes.get(0).nodeType;
+    assertEquals("test-class", elementNode.attributes.get("class"));
+    assertEquals("test_id", elementNode.attributes.get("id"));
+  }
+
+  @Test
+  void parseNodes_complexStructure() throws Exception {
+    Parser parser = new Parser("""
+        <html>
+          <head>
+            <title>Test</title>
+          </head>
+          <body>
+            <header>
+              <nav>
+                <a href="/">Home</a>
+              </nav>
+            </header>
+            <main>
+              <article>
+                <h1>Article Title</h1>
+                <p>Article content</p>
+              </article>
+            </main>
+          </body>
+        </html>
+        """.trim());
+    
+    List<Node> nodes = parser.parseNodes();
+    assertEquals(1, nodes.size());
+    
+    Node htmlNode = nodes.get(0);
+    assertEquals("html", ((ElementNode) htmlNode.nodeType).tagName);
+    assertEquals(2, htmlNode.children.size());
+    
+    Node headNode = htmlNode.children.get(0);
+    assertEquals("head", ((ElementNode) headNode.nodeType).tagName);
+    assertEquals(1, headNode.children.size());
+    
+    Node titleNode = headNode.children.get(0);
+    assertEquals("title", ((ElementNode) titleNode.nodeType).tagName);
+    assertEquals("Test", ((TextNode) titleNode.children.get(0).nodeType).text);
+    
+    Node bodyNode = htmlNode.children.get(1);
+    assertEquals("body", ((ElementNode) bodyNode.nodeType).tagName);
+    assertEquals(2, bodyNode.children.size());
   }
 }
