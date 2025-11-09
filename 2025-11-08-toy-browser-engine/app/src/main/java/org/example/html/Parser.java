@@ -1,5 +1,7 @@
 package org.example.html;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -17,7 +19,7 @@ public class Parser {
   }
 
   // 次の文字覗き見する
-  public String next_char() throws Exception {
+  public String nextChar() throws Exception {
     if (this.eof()) {
       throw new Exception("EOF");
     }
@@ -25,13 +27,13 @@ public class Parser {
   }
 
   // 指定した文字列で始まるかどうかを返す
-  public boolean starts_with(String s) {
+  public boolean startsWith(String s) {
     return this.input.startsWith(s, this.pos);
   }
 
   // 指定した文字列が現在の位置にあるかどうかを確認する
   public void expect(String s) throws Exception {
-    if (!this.starts_with(s)) {
+    if (!this.startsWith(s)) {
       throw new Exception("Expected " + s);
     }
     this.pos += s.length();
@@ -43,54 +45,87 @@ public class Parser {
   }
 
   // 次の文字を読み込む
-  public String consume_char() throws Exception {
-    String c = this.next_char();
+  public String consumeChar() throws Exception {
+    String c = this.nextChar();
     this.pos++;
     return c;
   }
 
   // 指定した条件を満たすまで、文字列を読み込む
-  public String consume_while(Function<String, Boolean> predicate) throws Exception {
+  public String consumeWhile(Function<String, Boolean> predicate) throws Exception {
     StringBuilder sb = new StringBuilder();
-    while (!this.eof() && predicate.apply(this.next_char())) {
-      sb.append(this.consume_char());
+    while (!this.eof() && predicate.apply(this.nextChar())) {
+      sb.append(this.consumeChar());
     }
     return sb.toString();
   }
 
   // 空白文字を読み込む
-  public void consume_whitespace() throws Exception {
-    this.consume_while(c -> c.equals(" ") || c.equals("\t") || c.equals("\n") || c.equals("\r"));
+  public void consumeWhitespace() throws Exception {
+    this.consumeWhile(c -> c.equals(" ") || c.equals("\t") || c.equals("\n") || c.equals("\r"));
   }
 
   // 名前を読み込む
-  public String parse_name() throws Exception {
-    return this.consume_while(c -> c.matches("[a-zA-Z0-9]"));
+  public String parseName() throws Exception {
+    return this.consumeWhile(c -> c.matches("[a-zA-Z0-9]"));
   }
 
   // ノードをパースする
-  public Node parse_node() throws Exception {
-    this.consume_whitespace();
-    if (this.starts_with("<")) {
-      return this.parse_element();
+  public Node parseNode() throws Exception {
+    this.consumeWhitespace();
+    if (this.startsWith("<")) {
+      return this.parseElement();
     }
-    return this.parse_text();
+    return this.parseText();
   }
 
   // テキストをパースする
-  public Node parse_text() throws Exception {
-    return Node.text(this.consume_while(c -> c != "<"));
+  public Node parseText() throws Exception {
+    return Node.text(this.consumeWhile(c -> !c.equals("<")));
   }
 
   // elementをパースする
-  public Node parse_element() throws Exception {
+  public Node parseElement() throws Exception {
     this.expect("<");
-    String tag_name = this.parse_name();
-    Map<String, String> attributes = this.parse_attributes();
+    String tagName = this.parseName();
+    Map<String, String> attributes = this.parseAttributes();
     this.expect(">");
-    List<Node> children = this.parse_nodes();
+    List<Node> children = this.parseNodes();
     this.expect("</");
-    this.expect(tag_name);
+    this.expect(tagName);
     this.expect(">");
+    return Node.element(tagName, attributes, children);
+  }
+
+  // nodeのattributeをパースする
+  public Map<String, String> parseAttributes() throws Exception {
+    this.consumeWhitespace();
+    Map<String, String> attributes = new HashMap<String, String>();
+    while (!this.nextChar().equals(">")) {
+      String name = this.parseName();
+      this.expect("=");
+      this.expect("\"");
+      String value = this.consumeWhile(c -> !c.equals("\""));
+      attributes.put(name, value);
+      this.expect("\"");
+      this.consumeWhitespace();
+    }
+    return attributes;
+  }
+
+  // nodeのリストをパースする
+  public List<Node> parseNodes() throws Exception {
+    List<Node> nodes = new ArrayList<Node>();
+      
+    this.consumeWhitespace();
+    while (!this.eof() && !this.startsWith("</")) {
+      if (this.startsWith("<")) {
+        nodes.add(this.parseElement());
+      } else {
+        nodes.add(this.parseText());
+      }
+      this.consumeWhitespace();
+    }
+    return nodes;
   }
 }
