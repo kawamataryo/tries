@@ -19,9 +19,9 @@ public class Parser {
   }
 
   // 次の文字覗き見する
-  public String nextChar() throws Exception {
+  public String peekChar() {
     if (this.eof()) {
-      throw new Exception("EOF");
+      throw new IllegalStateException("EOF");
     }
     return this.input.substring(this.pos, this.pos + 1);
   }
@@ -32,9 +32,9 @@ public class Parser {
   }
 
   // 指定した文字列が現在の位置にあるかどうかを確認する
-  public void expect(String s) throws Exception {
+  public void expect(String s) {
     if (!this.startsWith(s)) {
-      throw new Exception("Expected " + s);
+      throw new IllegalStateException("Expected " + s);
     }
     this.pos += s.length();
   }
@@ -45,47 +45,47 @@ public class Parser {
   }
 
   // 次の文字を読み込む
-  public String consumeChar() throws Exception {
-    String c = this.nextChar();
+  public String consumeChar() {
+    String c = this.peekChar();
     this.pos++;
     return c;
   }
 
   // 指定した条件を満たすまで、文字列を読み込む
-  public String consumeWhile(Function<String, Boolean> predicate) throws Exception {
+  public String consumeWhile(Function<String, Boolean> predicate) {
     StringBuilder sb = new StringBuilder();
-    while (!this.eof() && predicate.apply(this.nextChar())) {
+    while (!this.eof() && predicate.apply(this.peekChar())) {
       sb.append(this.consumeChar());
     }
     return sb.toString();
   }
 
   // 空白文字を読み込む
-  public void consumeWhitespace() throws Exception {
+  public void consumeWhitespace() {
     this.consumeWhile(c -> c.equals(" ") || c.equals("\t") || c.equals("\n") || c.equals("\r"));
   }
 
   // 名前を読み込む
-  public String parseName() throws Exception {
+  public String parseName() {
     return this.consumeWhile(c -> c.matches("[a-zA-Z0-9]"));
   }
 
   // ノードをパースする
-  public Node parseNode() throws Exception {
+  public Node parseNode() {
     this.consumeWhitespace();
-    if (this.startsWith("<")) {
-      return this.parseElement();
-    }
-    return this.parseText();
+    return switch (this.peekChar()) {
+      case "<" -> this.parseElement();
+      default -> this.parseText();
+    };
   }
 
   // テキストをパースする
-  public Node parseText() throws Exception {
+  public Node parseText() {
     return Node.text(this.consumeWhile(c -> !c.equals("<")));
   }
 
   // elementをパースする
-  public Node parseElement() throws Exception {
+  public Node parseElement() {
     this.expect("<");
     String tagName = this.parseName();
     Map<String, String> attributes = this.parseAttributes();
@@ -98,10 +98,10 @@ public class Parser {
   }
 
   // nodeのattributeをパースする
-  public Map<String, String> parseAttributes() throws Exception {
+  public Map<String, String> parseAttributes() {
     this.consumeWhitespace();
     Map<String, String> attributes = new HashMap<String, String>();
-    while (!this.nextChar().equals(">")) {
+    while (!this.peekChar().equals(">")) {
       String name = this.parseName();
       this.expect("=");
       this.expect("\"");
@@ -114,7 +114,7 @@ public class Parser {
   }
 
   // nodeのリストをパースする
-  public List<Node> parseNodes() throws Exception {
+  public List<Node> parseNodes() {
     List<Node> nodes = new ArrayList<Node>();
       
     this.consumeWhitespace();
