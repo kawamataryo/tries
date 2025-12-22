@@ -52,19 +52,25 @@ public class Todo {
     }
 
     private void apply(DomainEvent event) {
-        if (event instanceof TodoCreatedEvent e) {
-            this.id = e.getAggregateId();
-            this.title = e.getTitle();
-            this.description = e.getDescription();
-            this.completed = false;
-            this.deleted = false;
-            this.version = e.getVersion();
-        } else if (event instanceof TodoCompletedEvent e) {
-            this.completed = true;
-            this.version = e.getVersion();
-        } else if (event instanceof TodoDeletedEvent e) {
-            this.deleted = true;
-            this.version = e.getVersion();
+        switch (event) {
+            case TodoCreatedEvent e:
+                this.id = e.getAggregateId();
+                this.title = e.getTitle();
+                this.description = e.getDescription();
+                this.completed = false;
+                this.deleted = false;
+                this.version = e.getVersion();
+                break;
+            case TodoCompletedEvent e:
+                this.completed = true;
+                this.version = e.getVersion();
+                break;
+            case TodoDeletedEvent e:
+                this.deleted = true;
+                this.version = e.getVersion();
+                break;
+            default:
+                throw new IllegalStateException("Unknown event type: " + event.getClass().getName());
         }
     }
 
@@ -76,7 +82,7 @@ public class Todo {
     }
 
     public List<DomainEvent> getUncommittedEvents() {
-        return this.uncommittedEvents;
+        return new ArrayList<>(this.uncommittedEvents);
     }
 
     public void clearUncommittedEvents() {

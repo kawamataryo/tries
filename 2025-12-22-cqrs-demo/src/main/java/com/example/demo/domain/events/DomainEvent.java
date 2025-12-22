@@ -3,6 +3,8 @@ package com.example.demo.domain.events;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 // イベントの基底クラス
 public abstract class DomainEvent {
     private final UUID eventId;
@@ -15,6 +17,18 @@ public abstract class DomainEvent {
         this.version = version;
         this.eventId = UUID.randomUUID();
         this.occurredAt = Instant.now();
+    }
+
+    // Jackson用のコンストラクタ
+    protected DomainEvent(
+            @JsonProperty("eventId") UUID eventId,
+            @JsonProperty("aggregateId") UUID aggregateId,
+            @JsonProperty("occurredAt") Instant occurredAt,
+            @JsonProperty("version") long version) {
+        this.eventId = eventId;
+        this.aggregateId = aggregateId;
+        this.occurredAt = occurredAt;
+        this.version = version;
     }
 
     public UUID getEventId() {
