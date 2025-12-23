@@ -2,41 +2,45 @@ package com.example.demo.application.query;
 
 import java.util.List;
 import java.util.UUID;
-
-import com.example.demo.domain.Todo;
-import com.example.demo.domain.events.DomainEvent;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.example.demo.infrastructure.eventstore.EventStore;
+import com.example.demo.infrastructure.readmodel.TodoReadModel;
+import com.example.demo.infrastructure.readmodel.TodoReadModelRepository;
 
 @Service
 public class TodoQueryService {
-    private final EventStore eventStore;
+    private final TodoReadModelRepository readModelRepository;
 
-    public TodoQueryService(EventStore eventStore) {
-        this.eventStore = eventStore;
+    public TodoQueryService(TodoReadModelRepository readModelRepository) {
+        this.readModelRepository = readModelRepository;
     }
 
     public TodoView getTodo(UUID todoId) {
-        List<DomainEvent> events = eventStore.getEvents(todoId);
-        if (events.isEmpty()) {
-            throw new IllegalArgumentException("Todo not found: " + todoId);
-        }
-        Todo todo = Todo.fromEvents(events);
-        if (todo.isDeleted()) {
+        TodoReadModel readModel = readModelRepository.findById(todoId)
+            .orElseThrow(() -> new IllegalArgumentException("Todo not found: " + todoId));
+
+        if (readModel.isDeleted()) {
             throw new IllegalArgumentException("Todo is deleted: " + todoId);
         }
+
         return new TodoView(
-            todo.getId(),
-            todo.getTitle(),
-            todo.getDescription(),
-            todo.isCompleted()
+            readModel.getId(),
+            readModel.getTitle(),
+            readModel.getDescription(),
+            readModel.isCompleted()
         );
     }
 
     public List<TodoView> getAllTodos() {
-        // TODO: 実装
-        return List.of();
+        return readModelRepository.findByDeletedFalse().stream()
+            .map(readModel -> new TodoView(
+                readModel.getId(),
+                readModel.getTitle(),
+                readModel.getDescription(),
+                readModel.isCompleted()
+            ))
+            .collect(Collectors.toList());
     }
 }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import com.example.demo.domain.events.DomainEvent;
@@ -14,10 +15,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class JpaEventStore implements EventStore {
     private final EventStoreRepository repository;
     private final ObjectMapper objectMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public JpaEventStore(EventStoreRepository repository, ObjectMapper objectMapper) {
+    public JpaEventStore(EventStoreRepository repository, ObjectMapper objectMapper, ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.objectMapper = objectMapper;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -38,6 +41,9 @@ public class JpaEventStore implements EventStore {
             })
             .collect(Collectors.toList());
         repository.saveAll(entries);
+
+        // イベントを発行（Read Modelを更新するため）
+        events.forEach(eventPublisher::publishEvent);
     }
 
     @Override
