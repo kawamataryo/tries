@@ -54,6 +54,13 @@ public class TodoController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping("/{id}/update")
+    public ResponseEntity<Void> updateTodo(@PathVariable UUID id, @RequestBody UpdateTodoRequest request) {
+        commandService.updateTodo(id, request.title(), request.description());
+        return ResponseEntity.noContent().build();
+    }
+
     public record CreateTodoRequest(String title, String description) {}
+    public record UpdateTodoRequest(String title, String description) {}
     public record CreateTodoResponse(UUID id) {}
 }

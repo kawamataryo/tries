@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.example.demo.domain.events.DomainEvent;
 import com.example.demo.domain.events.TodoCreatedEvent;
 import com.example.demo.domain.events.TodoDeletedEvent;
+import com.example.demo.domain.events.TodoUpdateEvent;
 import com.example.demo.exceptions.ConflictException;
 import com.example.demo.domain.events.TodoCompletedEvent;
 
@@ -52,6 +53,13 @@ public class Todo {
         this.applyChange(new TodoDeletedEvent(this.id, this.version + 1), true);
     }
 
+    public void update(String title, String description) {
+        if (this.deleted) {
+            throw new ConflictException("Cannot update a deleted todo");
+        }
+        this.applyChange(new TodoUpdateEvent(this.id, title, description, this.version + 1), true);
+    }
+
     private void apply(DomainEvent event) {
         switch (event) {
             case TodoCreatedEvent e:
@@ -68,6 +76,11 @@ public class Todo {
                 break;
             case TodoDeletedEvent e:
                 this.deleted = true;
+                this.version = e.getVersion();
+                break;
+            case TodoUpdateEvent e:
+                this.title = e.getTitle();
+                this.description = e.getDescription();
                 this.version = e.getVersion();
                 break;
             default:

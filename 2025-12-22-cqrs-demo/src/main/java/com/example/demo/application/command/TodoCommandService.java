@@ -4,12 +4,11 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.example.demo.domain.events.DomainEvent;
 import com.example.demo.exceptions.NotFoundException;
 import com.example.demo.domain.Todo;
 import com.example.demo.infrastructure.eventstore.EventStore;
-
-import jakarta.transaction.Transactional;
 
 @Service
 public class TodoCommandService {
@@ -44,6 +43,16 @@ public class TodoCommandService {
     public void deleteTodo(UUID todoId) {
         Todo todo = loadTodo(todoId);
         todo.delete();
+
+        List<DomainEvent> events = todo.getUncommittedEvents();
+        eventStore.save(events);
+        todo.clearUncommittedEvents();
+    }
+
+    @Transactional
+    public void updateTodo(UUID todoId, String title, String description) {
+        Todo todo = loadTodo(todoId);
+        todo.update(title, description);
 
         List<DomainEvent> events = todo.getUncommittedEvents();
         eventStore.save(events);

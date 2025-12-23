@@ -3,13 +3,13 @@ package com.example.demo.infrastructure.readmodel;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.example.demo.domain.events.TodoCompletedEvent;
 import com.example.demo.domain.events.TodoCreatedEvent;
 import com.example.demo.domain.events.TodoDeletedEvent;
+import com.example.demo.domain.events.TodoUpdateEvent;
 
 @Component
 public class TodoProjection {
@@ -19,7 +19,7 @@ public class TodoProjection {
         this.repository = repository;
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void handle(TodoCreatedEvent event) {
         TodoReadModel readModel = new TodoReadModel(
             event.getAggregateId(),
@@ -31,7 +31,7 @@ public class TodoProjection {
         repository.save(readModel);
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void handle(TodoCompletedEvent event) {
         UUID aggregateId = event.getAggregateId();
         Optional<TodoReadModel> optional = repository.findById(aggregateId);
@@ -42,13 +42,25 @@ public class TodoProjection {
         }
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void handle(TodoDeletedEvent event) {
         UUID aggregateId = event.getAggregateId();
         Optional<TodoReadModel> optional = repository.findById(aggregateId);
         if (optional.isPresent()) {
             TodoReadModel readModel = optional.get();
             readModel.setDeleted(true);
+            repository.save(readModel);
+        }
+    }
+
+    @EventListener
+    public void handle(TodoUpdateEvent event) {
+        UUID aggregateId = event.getAggregateId();
+        Optional<TodoReadModel> optional = repository.findById(aggregateId);
+        if (optional.isPresent()) {
+            TodoReadModel readModel = optional.get();
+            readModel.setTitle(event.getTitle());
+            readModel.setDescription(event.getDescription());
             repository.save(readModel);
         }
     }

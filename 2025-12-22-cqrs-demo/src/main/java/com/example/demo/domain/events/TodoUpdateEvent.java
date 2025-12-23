@@ -6,18 +6,18 @@ import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class TodoCreatedEvent extends DomainEvent {
+public class TodoUpdateEvent extends DomainEvent {
     private final String title;
     private final String description;
 
-    public TodoCreatedEvent(UUID todoId, String title, String description, Long version) {
+    public TodoUpdateEvent(UUID todoId, String title, String description, Long version) {
         super(todoId, version);
         this.title = title;
         this.description = description;
     }
 
     @JsonCreator
-    public TodoCreatedEvent(
+    public TodoUpdateEvent(
             @JsonProperty("eventId") UUID eventId,
             @JsonProperty("aggregateId") UUID aggregateId,
             @JsonProperty("occurredAt") Instant occurredAt,
