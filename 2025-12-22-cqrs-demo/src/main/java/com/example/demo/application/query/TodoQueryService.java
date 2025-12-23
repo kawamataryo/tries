@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.example.demo.exceptions.NotFoundException;
 import com.example.demo.infrastructure.readmodel.TodoReadModel;
 import com.example.demo.infrastructure.readmodel.TodoReadModelRepository;
 
@@ -19,10 +20,10 @@ public class TodoQueryService {
 
     public TodoView getTodo(UUID todoId) {
         TodoReadModel readModel = readModelRepository.findById(todoId)
-            .orElseThrow(() -> new IllegalArgumentException("Todo not found: " + todoId));
+            .orElseThrow(() -> new NotFoundException("Todo not found: " + todoId));
 
         if (readModel.isDeleted()) {
-            throw new IllegalArgumentException("Todo is deleted: " + todoId);
+            throw new NotFoundException("Todo is deleted: " + todoId);
         }
 
         return new TodoView(

@@ -3,10 +3,13 @@ package com.example.demo.presentation;
 import com.example.demo.application.command.TodoCommandService;
 import com.example.demo.application.query.TodoQueryService;
 import com.example.demo.application.query.TodoView;
+import com.example.demo.exceptions.NotFoundException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 
@@ -27,14 +30,16 @@ public class TodoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new CreateTodoResponse(id));
     }
 
+    @GetMapping
+    public ResponseEntity<List<TodoView>> getAllTodos() {
+        List<TodoView> todos = queryService.getAllTodos();
+        return ResponseEntity.ok(todos);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<TodoView> getTodo(@PathVariable UUID id) {
-        try {
-            TodoView todo = queryService.getTodo(id);
-            return ResponseEntity.ok(todo);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        TodoView todo = queryService.getTodo(id);
+        return ResponseEntity.ok(todo);
     }
 
     @PutMapping("/{id}/complete")

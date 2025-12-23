@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.example.demo.domain.events.DomainEvent;
 import com.example.demo.domain.events.TodoCreatedEvent;
 import com.example.demo.domain.events.TodoDeletedEvent;
+import com.example.demo.exceptions.ConflictException;
 import com.example.demo.domain.events.TodoCompletedEvent;
 
 public class Todo {
@@ -36,17 +37,17 @@ public class Todo {
 
     public void complete() {
         if (this.deleted) {
-            throw new IllegalStateException("Cannot complete a deleted todo");
+            throw new ConflictException("Cannot complete a deleted todo");
         }
         if (this.completed) {
-            throw new IllegalStateException("Todo is already completed");
+            throw new ConflictException("Todo is already completed");
         }
         this.applyChange(new TodoCompletedEvent(this.id, this.version + 1), true);
     }
 
     public void delete() {
         if (this.deleted) {
-            throw new IllegalStateException("Todo is already deleted");
+            throw new ConflictException("Todo is already deleted");
         }
         this.applyChange(new TodoDeletedEvent(this.id, this.version + 1), true);
     }

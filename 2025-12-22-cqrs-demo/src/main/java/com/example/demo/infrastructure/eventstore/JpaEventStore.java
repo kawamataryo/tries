@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import com.example.demo.domain.events.DomainEvent;
+import com.example.demo.exceptions.OptimisticLockingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
@@ -25,6 +26,25 @@ public class JpaEventStore implements EventStore {
 
     @Override
     public void save(List<DomainEvent> events) {
+        if (events.isEmpty()) {
+            return;
+        }
+
+        // オプティミスティックロッキングのチェック
+        UUID aggregateId = events.get(0).getAggregateId();
+        long expectedVersion = events.get(0).getVersion() - 1;
+
+        // 現在の最新バージョンを確認
+        // もし存在しない場合（新規）は-1を返す。expectedVersionも-1になるのでチェックが通る。
+        long currentVersion = repository.findMaxVersionByAggregateId(aggregateId)
+            .orElse(-1L);
+
+        if (currentVersion != expectedVersion) {
+            throw new OptimisticLockingException(
+                String.format("Aggregate version mismatch. AggregateId: %s, Expected version: %d, Current version: %d",
+                    aggregateId, expectedVersion, currentVersion));
+        }
+
         List<EventStoreEntity> entries = events.stream()
             .map(event -> {
                 try {

@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import com.example.demo.domain.events.DomainEvent;
-
+import com.example.demo.exceptions.NotFoundException;
 import com.example.demo.domain.Todo;
 import com.example.demo.infrastructure.eventstore.EventStore;
 
@@ -53,7 +53,7 @@ public class TodoCommandService {
     private Todo loadTodo(UUID todoId) {
         List<DomainEvent> events = eventStore.getEvents(todoId);
         if (events.isEmpty()) {
-            throw new IllegalArgumentException("Todo not found: " + todoId);
+            throw new NotFoundException("Todo not found: " + todoId);
         }
         return Todo.fromEvents(events);
     }
