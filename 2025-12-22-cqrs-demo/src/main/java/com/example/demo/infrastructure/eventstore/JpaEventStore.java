@@ -10,7 +10,8 @@ import org.springframework.stereotype.Component;
 import com.example.demo.domain.events.DomainEvent;
 import com.example.demo.exceptions.OptimisticLockingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 @Component
 public class JpaEventStore implements EventStore {
@@ -18,10 +19,27 @@ public class JpaEventStore implements EventStore {
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
 
-    public JpaEventStore(EventStoreRepository repository, ObjectMapper objectMapper, ApplicationEventPublisher eventPublisher) {
+    public JpaEventStore(EventStoreRepository repository, ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
-        this.objectMapper = objectMapper;
         this.eventPublisher = eventPublisher;
+        // ObjectMapperを直接作成（インフラ層の実装詳細として適切）
+        this.objectMapper = createObjectMapper();
+    }
+
+    /**
+     * Event Store用のObjectMapperを作成
+     *
+     * Java 8の時間API（Instant等）を正しく処理できるように設定します。
+     * インフラ層の実装詳細として、ここで直接作成することで、
+     * Spring Bootの自動設定に依存せず、明確な設定が可能です。
+     */
+    private ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        // Java 8の時間API（Instant等）を正しく処理するためのモジュール
+        mapper.registerModule(new JavaTimeModule());
+        // 日付をタイムスタンプではなくISO-8601形式でシリアライズ
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper;
     }
 
     @Override
