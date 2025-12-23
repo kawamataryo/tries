@@ -20,7 +20,7 @@ public class Todo {
 
     private Todo() {}
 
-    public static Todo formEvents(List<DomainEvent> events) {
+    public static Todo fromEvents(List<DomainEvent> events) {
         Todo todo = new Todo();
         for (DomainEvent event : events) {
             todo.apply(event);

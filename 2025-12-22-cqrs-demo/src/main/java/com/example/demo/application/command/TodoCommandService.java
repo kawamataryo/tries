@@ -55,6 +55,6 @@ public class TodoCommandService {
         if (events.isEmpty()) {
             throw new IllegalArgumentException("Todo not found: " + todoId);
         }
-        return Todo.formEvents(events);
+        return Todo.fromEvents(events);
     }
 }

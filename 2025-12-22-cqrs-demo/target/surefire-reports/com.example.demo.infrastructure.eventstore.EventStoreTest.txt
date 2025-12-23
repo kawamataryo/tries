@@ -1,0 +1,11 @@
+-------------------------------------------------------------------------------
+Test set: com.example.demo.infrastructure.eventstore.EventStoreTest
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 2.133 s <<< FAILURE! -- in com.example.demo.infrastructure.eventstore.EventStoreTest
+com.example.demo.infrastructure.eventstore.EventStoreTest.イベントを保存して取得できる -- Time elapsed: 0.012 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: 2954c291-ed8b-45df-b17d-d4641ee94a77
+ but was: null
+	at com.example.demo.infrastructure.eventstore.EventStoreTest.イベントを保存して取得できる(EventStoreTest.java:57)
+

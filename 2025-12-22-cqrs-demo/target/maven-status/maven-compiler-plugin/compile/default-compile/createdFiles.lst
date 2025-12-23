@@ -1,0 +1,10 @@
+com/example/demo/DemoApplication.class
+com/example/demo/domain/events/TodoCreatedEvent.class
+com/example/demo/infrastructure/eventstore/EventRepository.class
+com/example/demo/domain/events/TodoDeletedEvent.class
+com/example/demo/infrastructure/eventstore/EventStore.class
+com/example/demo/domain/events/TodoCompletedEvent.class
+com/example/demo/domain/events/DomainEvent.class
+com/example/demo/infrastructure/eventstore/EventEntity.class
+com/example/demo/domain/TodoCompletedEvent.class
+com/example/demo/domain/Todo.class

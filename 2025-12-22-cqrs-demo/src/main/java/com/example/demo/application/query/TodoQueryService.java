@@ -23,7 +23,7 @@ public class TodoQueryService {
         if (events.isEmpty()) {
             throw new IllegalArgumentException("Todo not found: " + todoId);
         }
-        Todo todo = Todo.formEvents(events);
+        Todo todo = Todo.fromEvents(events);
         if (todo.isDeleted()) {
             throw new IllegalArgumentException("Todo is deleted: " + todoId);
         }

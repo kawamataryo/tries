@@ -1,0 +1,10 @@
+/Users/ryokawamata/src/tries/2025-12-22-cqrs-demo/src/main/java/com/example/demo/DemoApplication.java
+/Users/ryokawamata/src/tries/2025-12-22-cqrs-demo/src/main/java/com/example/demo/domain/Todo.java
+/Users/ryokawamata/src/tries/2025-12-22-cqrs-demo/src/main/java/com/example/demo/domain/TodoCompletedEvent.java
+/Users/ryokawamata/src/tries/2025-12-22-cqrs-demo/src/main/java/com/example/demo/domain/events/DomainEvent.java
+/Users/ryokawamata/src/tries/2025-12-22-cqrs-demo/src/main/java/com/example/demo/domain/events/TodoCompletedEvent.java
+/Users/ryokawamata/src/tries/2025-12-22-cqrs-demo/src/main/java/com/example/demo/domain/events/TodoCreatedEvent.java
+/Users/ryokawamata/src/tries/2025-12-22-cqrs-demo/src/main/java/com/example/demo/domain/events/TodoDeletedEvent.java
+/Users/ryokawamata/src/tries/2025-12-22-cqrs-demo/src/main/java/com/example/demo/infrastructure/eventstore/EventEntity.java
+/Users/ryokawamata/src/tries/2025-12-22-cqrs-demo/src/main/java/com/example/demo/infrastructure/eventstore/EventRepository.java
+/Users/ryokawamata/src/tries/2025-12-22-cqrs-demo/src/main/java/com/example/demo/infrastructure/eventstore/EventStore.java
