@@ -3,7 +3,6 @@ package com.example.demo.presentation;
 import com.example.demo.application.command.TodoCommandService;
 import com.example.demo.application.query.TodoQueryService;
 import com.example.demo.application.query.TodoView;
-import com.example.demo.exceptions.NotFoundException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
