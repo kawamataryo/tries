@@ -1,0 +1,21 @@
+FROM maven:3.9-eclipse-temurin-21
+WORKDIR /app
+
+# Maven Wrapperをコピー
+COPY mvnw .
+COPY mvnw.cmd .
+COPY .mvn .mvn
+COPY pom.xml .
+
+# 依存関係をダウンロード（キャッシュを活用）
+RUN ./mvnw dependency:go-offline -B
+
+# データベースファイル用のディレクトリを作成
+RUN mkdir -p /app/data
+
+# ポートを公開
+EXPOSE 8080
+
+# 開発モードでMavenを実行（spring-boot-devtoolsでホットリロード有効）
+CMD ["./mvnw", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-Dspring.application.admin.enabled=true"]
+
