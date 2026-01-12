@@ -9,6 +9,8 @@ export function ReflectionView() {
     handleSaveReflection,
   } = useReflection();
 
+  const canSave = reflection.trim().length > 0 && !reflectionLoading;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-8 max-w-lg w-full shadow-2xl">
@@ -28,6 +30,13 @@ export function ReflectionView() {
           <textarea
             value={reflection}
             onChange={(e) => setReflection(e.target.value)}
+            onKeyDown={(e) => {
+              // ⌘+Enter で「保存して終了」と同じ処理を実行する
+              if (e.key === "Enter" && e.metaKey) {
+                e.preventDefault();
+                if (canSave) handleSaveReflection();
+              }
+            }}
             placeholder="例: 新しい技術のトレンドを3つ発見できた"
             rows={5}
             disabled={reflectionLoading}
@@ -46,9 +55,9 @@ export function ReflectionView() {
 
         <button
           onClick={handleSaveReflection}
-          disabled={!reflection.trim() || reflectionLoading}
+          disabled={!canSave}
           className={`w-full px-4 py-4 text-white border-none rounded-xl text-lg font-bold transition-all ${
-            reflection.trim() && !reflectionLoading
+            canSave
               ? "bg-purple-500 hover:bg-purple-600 cursor-pointer shadow-lg hover:shadow-xl"
               : "bg-gray-400 cursor-not-allowed"
           }`}

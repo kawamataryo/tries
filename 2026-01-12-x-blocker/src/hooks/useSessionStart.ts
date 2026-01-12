@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Storage } from "@plasmohq/storage";
 import { sendToBackground } from "@plasmohq/messaging";
 import { getSettings } from "~lib/storage";
+import { getToday } from "~lib/types";
+import type { Session } from "~lib/types";
 
 const storage = new Storage();
 
@@ -12,6 +14,7 @@ export function useSessionStart() {
   const [startLoading, setStartLoading] = useState(false);
   const [startError, setStartError] = useState("");
   const [presets, setPresets] = useState<number[]>([1, 5, 10, 20]);
+  const [activeSession, setActiveSession] = useState<Session | null>(null);
 
   // セッション開始画面用データをロード
   const loadSessionStartData = async () => {
@@ -19,8 +22,11 @@ export function useSessionStart() {
       const currentSettings = await getSettings();
       setPresets(currentSettings.presetMinutes);
 
+      const currentSession = await storage.get<Session>("currentSession");
+      setActiveSession(currentSession && currentSession.isActive ? currentSession : null);
+
       const dailyUsage = (await storage.get("dailyUsage")) || {};
-      const today = new Date().toISOString().split("T")[0];
+      const today = getToday();
       const todayUsage = dailyUsage[today] || { totalUsedMinutes: 0 };
 
       const remaining = Math.max(
@@ -72,6 +78,13 @@ export function useSessionStart() {
 
   // セッション開始
   const handleStartSession = async (minutesParam?: number) => {
+    // 既にアクティブなセッションがある場合は再開扱いにする
+    const currentSession = await storage.get<Session>("currentSession");
+    if (currentSession && currentSession.isActive && currentSession.remainingSeconds > 0) {
+      window.location.replace("https://x.com/home");
+      return;
+    }
+
     const minutes = minutesParam ?? selectedMinutes;
 
     if (!minutes) {
@@ -94,16 +107,43 @@ export function useSessionStart() {
       });
 
       if (response.success) {
-        // X.comのタブを開く
-        await chrome.tabs.create({ url: "https://x.com/home" });
-        // optionsページを閉じる
-        window.close();
+        // 履歴を置き換えてXへ遷移（戻るでセッション開始画面に戻れない）
+        window.location.replace("https://x.com/home");
       } else {
         setStartError(response.error || "セッションの開始に失敗しました");
       }
     } catch (err) {
       console.error("Error starting session:", err);
       setStartError("セッションの開始に失敗しました");
+    } finally {
+      setStartLoading(false);
+    }
+  };
+
+  // セッション再開（Xへ戻る）
+  const handleResumeSession = () => {
+    window.location.replace("https://x.com/home");
+  };
+
+  // セッション終了
+  const handleEndSession = async () => {
+    setStartLoading(true);
+    setStartError("");
+    try {
+      const response = await sendToBackground({
+        name: "end-session",
+        body: {},
+      });
+
+      if (!response.success) {
+        setStartError(response.error || "セッションの終了に失敗しました");
+        return;
+      }
+
+      await loadSessionStartData();
+    } catch (err) {
+      console.error("Error ending session:", err);
+      setStartError("セッションの終了に失敗しました");
     } finally {
       setStartLoading(false);
     }
@@ -116,9 +156,12 @@ export function useSessionStart() {
     startLoading,
     startError,
     presets,
+    activeSession,
     loadSessionStartData,
     handlePresetClick,
     handleCustomChange,
     handleStartSession,
+    handleResumeSession,
+    handleEndSession,
   };
 }

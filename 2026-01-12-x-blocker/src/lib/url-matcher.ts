@@ -1,10 +1,7 @@
-// 制限対象のページパターン（タイマーが動作するページ）
-const RESTRICTED_PATTERNS = [
-  /^https?:\/\/(twitter|x)\.com\/home/,           // タイムライン
-  /^https?:\/\/(twitter|x)\.com\/search/,         // 検索
-  /^https?:\/\/(twitter|x)\.com\/explore/,        // トレンド
-  /^https?:\/\/(twitter|x)\.com\/notifications/, // 通知
-];
+// 制限対象のページパターン（X/Twitter全体）
+// - ここを狭くすると、X内の遷移やログインフロー等で「対象外」になりやすく、
+//   制御が不安定になるため、X/Twitter配下は基本すべて対象にする。
+const RESTRICTED_PATTERNS = [/^https?:\/\/(twitter|x)\.com(\/|$)/];
 
 // 除外対象のページパターン（タイマーが停止するページ）
 const EXCLUDED_PATTERNS = [

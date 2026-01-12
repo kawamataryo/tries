@@ -2,12 +2,24 @@ import { Storage } from "@plasmohq/storage";
 import { getCurrentSession, saveCurrentSession, initializeStorage } from "~lib/storage";
 import { decrementSession, isSessionExpired, isSessionToday } from "~lib/timer";
 import { isTimerTargetPage } from "~lib/url-matcher";
+import { getToday } from "~lib/types";
 
 // タイマーインターバルID
 let timerInterval: NodeJS.Timeout | null = null;
 
 // ストレージインスタンス
 const storage = new Storage();
+
+/**
+ * ローカルTZの「次の0:00」までの残りミリ秒を計算
+ */
+function getMillisecondsUntilMidnightLocal(): number {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  return Math.max(0, tomorrow.getTime() - now.getTime());
+}
 
 /**
  * タイマーを開始
@@ -137,17 +149,6 @@ async function handleTabUpdate(tabId: number, changeInfo: chrome.tabs.TabChangeI
       // アクティブなセッションがある場合はタイマーを開始
       console.log("[X Blocker] Active session found, starting timer");
       startTimer();
-    } else {
-      // タイマー対象外ページに移動した場合はタイマーを停止
-      const session = await getCurrentSession();
-      if (session && session.isActive) {
-        const updatedSession = {
-          ...session,
-          isActive: false,
-        };
-        await saveCurrentSession(updatedSession);
-        stopTimer();
-      }
     }
   }
 }
@@ -192,15 +193,62 @@ async function restoreState() {
 }
 
 /**
- * 日付変更チェック（1分ごと）
+ * 日本時間の0:00でリセット処理を実行
  */
-let lastCheckDate = new Date().toDateString();
+async function resetAtMidnightLocal() {
+  console.log("[X Blocker] Resetting at midnight (local TZ)");
+  
+  // セッションをリセット
+  const session = await getCurrentSession();
+  if (session) {
+    await saveCurrentSession(null);
+    stopTimer();
+    
+    // すべてのX.comタブをセッション開始画面にリダイレクト
+    const tabs = await chrome.tabs.query({});
+    const startUrl = chrome.runtime.getURL("options.html?view=start-session");
+    
+    for (const tab of tabs) {
+      if (tab.id && tab.url && isTimerTargetPage(tab.url)) {
+        await chrome.tabs.update(tab.id, { url: startUrl });
+      }
+    }
+  }
+  
+  // 次の0:00までのタイマーを再設定
+  scheduleMidnightReset();
+}
+
+/**
+ * 日本時間の0:00にリセット処理をスケジュール
+ */
+let midnightResetTimeout: NodeJS.Timeout | null = null;
+
+function scheduleMidnightReset() {
+  const msUntilMidnight = getMillisecondsUntilMidnightLocal();
+  console.log(`[X Blocker] Scheduling reset in ${Math.floor(msUntilMidnight / 1000 / 60)} minutes`);
+  
+  if (midnightResetTimeout) {
+    clearTimeout(midnightResetTimeout);
+    midnightResetTimeout = null;
+  }
+
+  midnightResetTimeout = setTimeout(() => {
+    resetAtMidnightLocal();
+  }, msUntilMidnight);
+}
+
+/**
+ * 日付変更チェック（1分ごと）- フォールバック用
+ */
+let lastCheckDate = getToday();
 
 setInterval(async () => {
-  const currentDate = new Date().toDateString();
+  const currentDate = getToday();
 
   if (currentDate !== lastCheckDate) {
     lastCheckDate = currentDate;
+    console.log("[X Blocker] Date changed (fallback check)");
 
     // 日付が変わったらセッションをリセット
     const session = await getCurrentSession();
@@ -218,6 +266,9 @@ setInterval(async () => {
         }
       }
     }
+    
+    // 次の0:00までのタイマーを再設定
+    scheduleMidnightReset();
   }
 }, 60000); // 1分ごとにチェック
 
@@ -226,11 +277,13 @@ chrome.runtime.onStartup.addListener(() => {
   console.log("Extension startup");
   initializeStorage();
   restoreState();
+  scheduleMidnightReset();
 });
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Extension installed");
   initializeStorage();
+  scheduleMidnightReset();
 });
 
 chrome.tabs.onUpdated.addListener(handleTabUpdate);

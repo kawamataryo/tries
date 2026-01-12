@@ -1,5 +1,5 @@
 import type { Session } from "./types";
-import { getToday } from "./types";
+import { getToday, formatDate } from "./types";
 
 /**
  * 新しいセッションを作成
@@ -53,11 +53,13 @@ export function resumeSession(session: Session): Session {
 }
 
 /**
- * セッションが今日のものかどうかを判定
+ * セッションが今日のものかどうかを判定（日本時間ベース）
  */
 export function isSessionToday(session: Session): boolean {
-  const sessionDate = new Date(session.startTime).toISOString().split('T')[0];
-  return sessionDate === getToday();
+  // `formatDate` / `getToday` がどちらも「JST基準のYYYY-MM-DD」なので、
+  // ここは単純に比較でOK（実行環境のローカルTZに依存しない）
+  const sessionDateStr = formatDate(new Date(session.startTime));
+  return sessionDateStr === getToday();
 }
 
 /**

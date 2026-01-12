@@ -42,12 +42,15 @@ export const DEFAULT_SETTINGS: Settings = {
   presetMinutes: [1, 5, 10, 20],    // デフォルトプリセット
 };
 
-// 日付フォーマット関数
+// 日付フォーマット関数（ローカルTZベース）
 export function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0]; // YYYY-MM-DD
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`; // YYYY-MM-DD
 }
 
-// 今日の日付を取得
+// 今日の日付を取得（ローカルTZ）
 export function getToday(): string {
   return formatDate(new Date());
 }

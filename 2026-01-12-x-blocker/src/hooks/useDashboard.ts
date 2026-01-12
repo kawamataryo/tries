@@ -12,6 +12,7 @@ export function useDashboard() {
   const [dashboardRemainingMinutes, setDashboardRemainingMinutes] = useState(0);
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [allSessions, setAllSessions] = useState<SessionRecordWithDate[]>([]);
+  const [dailyUsageHistory, setDailyUsageHistory] = useState<DailyUsage[]>([]);
 
   // 全セッション履歴を取得（最新順）
   const loadAllSessions = async () => {
@@ -37,6 +38,18 @@ export function useDashboard() {
     }
   };
 
+  // 日別利用時間履歴を取得（直近30日分）
+  const loadDailyUsageHistory = async () => {
+    try {
+      const allDailyUsage = await getAllDailyUsage();
+      // 最新30日分に制限
+      const recentUsage = allDailyUsage.slice(0, 30);
+      setDailyUsageHistory(recentUsage);
+    } catch (error) {
+      console.error("Error loading daily usage history:", error);
+    }
+  };
+
   // ダッシュボードデータをロード
   const loadDashboardData = async (skipSessions = false) => {
     setDashboardLoading(true);
@@ -50,6 +63,7 @@ export function useDashboard() {
       
       if (!skipSessions) {
         await loadAllSessions();
+        await loadDailyUsageHistory();
       }
     } catch (error) {
       console.error("Error loading dashboard data:", error);
@@ -63,6 +77,7 @@ export function useDashboard() {
     dashboardRemainingMinutes,
     dashboardLoading,
     allSessions,
+    dailyUsageHistory,
     loadDashboardData,
   };
 }
